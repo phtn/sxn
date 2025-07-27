@@ -1,0 +1,27 @@
+{
+  "name": "sxn",
+  "version": "0.1.5",
+  "private": true,
+  "type": "module",
+  "main": "src/index.tsx",
+  "module": "src/index.tsx",
+  "scripts": {
+    "dev": "bun --hot src/index.html",
+    "start": "NODE_ENV=production bun src/index.html",
+    "build": "bun run build.ts",
+    "clean": "rm -rf dist",
+    "core": "tsc --outDir=dist src/core/*.ts"
+  },
+  "dependencies": {
+    "bun-plugin-tailwind": "^0.0.14",
+    "react": "^19",
+    "react-dom": "^19",
+    "tailwindcss": "^4.0.6"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/chrome": "^0.1.1",
+    "@types/react": "^19",
+    "@types/react-dom": "^19"
+  }
+}

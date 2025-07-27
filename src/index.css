@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+:root {
+    --origin: oklch(0.37 0.013 285.81);
+    --font-geist-sans: "Geist", sans-serif;
+    --font-geist-mono: "Geist Mono", mono-space;
+}
+
+@layer base {
+    :root {
+        @apply text-[rgba(255,255,255,0.87)] bg-[#242424] font-sans;
+    }
+
+    body {
+        @apply grid place-items-center min-w-[320px] min-h-screen relative m-0;
+    }
+}
+
+body {
+    width: 100%;
+    ::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+@keyframes slide {
+    from {
+        background-position: 0 0;
+    }
+    to {
+        background-position: 256px 224px;
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion) {
+    *,
+    ::before,
+    ::after {
+        animation: none !important;
+    }
+}
+
+@theme inline {
+    --color-card: var(--origin);
+    --font-sans: var(--font-geist-sans);
+    --font-mono: var(--font-geist-mono);
+}
