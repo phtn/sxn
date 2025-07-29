@@ -15,7 +15,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, info, tab) => {
   try {
     await chrome.sidePanel.setOptions({
       tabId,
-      path: "sidepanel.html",
+      path: "index.html",
       enabled: isTargetSite
     });
   } catch (err) {

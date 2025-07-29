@@ -80,7 +80,7 @@ async function handleMessage(event) {
     try {
       const { data } = event.data;
       if (!data || typeof data !== "object") {
-        console.warn("CONTENT: Invalid data structure in message:", data);
+        console.log("WARN|CONTENT: Invalid data structure in message:", data);
         return;
       }
       await processGameResult(data);
@@ -97,7 +97,7 @@ async function processGameResult({ data }) {
       await saveGameResult(result);
       console.log("Casino game result saved:", result);
     } else {
-      console.warn("Could not parse game result from response data:");
+      console.log("WARN|Could not parse game result from response data:");
       console.log("Response data structure:", JSON.stringify(data, null, 2));
       if (data) {
         console.log("Nested data structure:", JSON.stringify(data, null, 2));
@@ -108,7 +108,7 @@ async function processGameResult({ data }) {
     }
   } catch (error) {
     if (error instanceof Error && error.message.includes("Extension context")) {
-      console.warn("Extension context invalidated. Could not save game result.");
+      console.log("WARN|Extension context invalidated. Could not save game result.");
     } else {
       console.error("Error processing game result:", error);
     }
@@ -153,22 +153,16 @@ function parseGameResult(data) {
       } else if ("rounds" in custom && Array.isArray(custom.rounds) && custom.rounds.length > 0 && custom.rounds[0].result && ["HEADS", "TAILS"].includes(custom.rounds[0].result)) {
         gameType = "coinflip";
         console.log("PARSE: Detected Coin Flip game from custom fields");
-      } else if ("result" in custom && typeof custom.result === "number" && "winningChance" in custom && typeof custom.winningChance === "number") {
-        if (custom.result >= 1 && custom.result <= 100) {
-          gameType = "dice";
-          console.log("PARSE: Detected Dice game from custom fields");
-        } else {
-          gameType = "limbo";
-          console.log("PARSE: Detected Limbo game from custom fields");
-        }
+      } else if ("option" in custom && "targetNumber" in custom && typeof custom.targetNumber === "number") {
+        gameType = "dice";
       } else if ("multiplier" in custom && typeof custom.multiplier === "number" && "winningChance" in custom && typeof custom.winningChance === "number") {
         gameType = "limbo";
         console.log("PARSE: Detected Limbo game from custom fields");
       } else {
         console.log("PARSE: Used URL-based game type detection:", gameType);
       }
-      const multiplier = "multiplier" in custom && custom.multiplier;
-      const winningChance = "winningChance" in custom && custom.winningChance;
+      const multiplier = "multiplier" in custom ? custom.multiplier : 0;
+      const winningChance = "winningChance" in custom ? custom.winningChance : undefined;
       console.table({
         result,
         amount,
@@ -177,15 +171,17 @@ function parseGameResult(data) {
         multiplier,
         winningChance
       });
-      const parsedResult = {
+      let parsedResult = {
         timestamp: Date.now(),
         result,
         amount,
         multiplier,
-        winningChance,
         gameType,
         url: window.location.href
       };
+      if (winningChance !== undefined) {
+        parsedResult.winningChance = winningChance;
+      }
       console.log("PARSE: Successfully parsed result:", parsedResult);
       return parsedResult;
     } else {

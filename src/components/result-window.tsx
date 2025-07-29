@@ -41,8 +41,10 @@ export const ResultWindow = ({
           {windowResults.map((result) => (
             <div
               key={result.timestamp}
-              className={`size-5 aspect-square rounded-md border border-gray-700 ${
-                result.result === "win" ? "bg-green-300" : "bg-gray-700"
+              className={`size-5 aspect-square rounded-md border  ${
+                result.result === "win"
+                  ? "bg-win border-win"
+                  : "bg-loss border-loss"
               }`}
               title={`${result.result} - ${new Date(result.timestamp).toLocaleTimeString()}`}
             />

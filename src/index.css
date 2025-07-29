@@ -53,4 +53,6 @@ body {
     --color-card: var(--origin);
     --font-sans: var(--font-geist-sans);
     --font-mono: var(--font-geist-mono);
+    --color-win: oklch(0.762 0.191 147.38);
+    --color-loss: oklch(0.424 0.027 256.81);
 }

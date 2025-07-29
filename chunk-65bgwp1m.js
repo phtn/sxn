@@ -15937,7 +15937,7 @@ var ResultWindow = ({
           className: "w-fit flex gap-1",
           children: [
             windowResults.map((result) => /* @__PURE__ */ jsx_dev_runtime2.jsxDEV("div", {
-              className: `size-5 aspect-square rounded-md border border-gray-700 ${result.result === "win" ? "bg-green-300" : "bg-gray-700"}`,
+              className: `size-5 aspect-square rounded-md border  ${result.result === "win" ? "bg-win border-win" : "bg-loss border-loss"}`,
               title: `${result.result} - ${new Date(result.timestamp).toLocaleTimeString()}`
             }, result.timestamp, false, undefined, this)),
             Array.from({
@@ -15982,6 +15982,13 @@ var GameEntry = ({ game }) => {
     minute: "2-digit"
   });
   const targetMultiplier = import_react2.useMemo(() => game.winningChance && (EDGE / game.winningChance * 100).toFixed(2), [game.winningChance]);
+  const profitAmount = import_react2.useMemo(() => game.amount, [game.amount]);
+  const betAmount = import_react2.useMemo(() => {
+    if (targetMultiplier && game.amount) {
+      return game.amount / (+targetMultiplier - 1);
+    }
+    return 0;
+  }, [targetMultiplier, game.amount]);
   return /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
     className: `flex justify-between items-center p-3 rounded-lg ${game.result === "win" ? "bg-green-50/10" : "bg-red-50/5"}`,
     children: [
@@ -15996,7 +16003,22 @@ var GameEntry = ({ game }) => {
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this),
           /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
-            className: "w-14 text-right",
+            className: "w-16 space-y-0.5 text-right",
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
+                className: "font-light text-gray-400 text-[8px] tracking-widest uppercase",
+                children: "bet"
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
+                className: "text-sm text-slate-200 space-x-4 flex justify-end capitalize",
+                children: /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("span", {
+                  children: betAmount?.toFixed(2)
+                }, undefined, false, undefined, this)
+              }, undefined, false, undefined, this)
+            ]
+          }, undefined, true, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
+            className: "w-14 space-y-0.5 text-right",
             children: [
               /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
                 className: "font-light text-gray-400 text-[8px] tracking-widest uppercase",
@@ -16005,13 +16027,13 @@ var GameEntry = ({ game }) => {
               /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
                 className: "text-sm text-slate-200 space-x-4 flex justify-end",
                 children: /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("span", {
-                  children: game.gameData?.active ? `${Number(game.amount).toFixed(2)}` : "N/A"
+                  children: profitAmount?.toFixed(2)
                 }, undefined, false, undefined, this)
               }, undefined, false, undefined, this)
             ]
           }, undefined, true, undefined, this),
           /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
-            className: "w-16 text-right",
+            className: "w-16 space-y-0.5 text-right",
             children: [
               /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
                 className: "font-light text-gray-400 text-[8px] tracking-widest uppercase",
@@ -16027,7 +16049,7 @@ var GameEntry = ({ game }) => {
             ]
           }, undefined, true, undefined, this),
           /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
-            className: "w-16 text-right",
+            className: "w-16 space-y-0.5 text-right",
             children: [
               /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
                 className: "font-light text-gray-400 text-[8px] tracking-widest uppercase",
@@ -16043,7 +16065,7 @@ var GameEntry = ({ game }) => {
             ]
           }, undefined, true, undefined, this),
           /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
-            className: "w-16 text-right",
+            className: "w-16 space-y-0.5 text-right",
             children: [
               /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
                 className: "font-light text-gray-400 text-[8px] tracking-widest uppercase",
@@ -16057,34 +16079,19 @@ var GameEntry = ({ game }) => {
                 }, undefined, false, undefined, this)
               }, undefined, false, undefined, this)
             ]
-          }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
-            className: "w-16 text-right",
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
-                className: "font-light text-gray-400 text-[8px] tracking-widest uppercase",
-                children: "game"
-              }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
-                className: "text-sm text-slate-200 space-x-4 flex justify-end capitalize",
-                children: /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("span", {
-                  children: game.gameType
-                }, undefined, false, undefined, this)
-              }, undefined, false, undefined, this)
-            ]
           }, undefined, true, undefined, this)
         ]
       }, undefined, true, undefined, this),
       /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
-        className: "text-right",
+        className: "text-right space-y-0.5",
         children: [
           /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
             className: "font-light font-mono text-xs text-gray-300",
-            children: timeStr
+            children: game.gameType
           }, undefined, false, undefined, this),
           /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
             className: "text-xs text-slate-400",
-            children: game.gameData?.roundId && `#${game.gameData.roundId}`
+            children: timeStr
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this)
@@ -16130,9 +16137,12 @@ var SidePanel = () => {
     };
     const getWinChanceFromDOM = () => {
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        console.log(tabs[0]?.id);
-        if (tabs[0]?.id) {
-          chrome.tabs.sendMessage(tabs[0].id, { type: "GET_WIN_CHANCE" }, (response) => {
+        const activeTab = tabs[0];
+        if (activeTab?.id && activeTab.url?.startsWith("https://bet88.ph/")) {
+          chrome.tabs.sendMessage(activeTab.id, { type: "GET_WIN_CHANCE" }, (response) => {
+            if (chrome.runtime.lastError) {
+              return;
+            }
             if (response && typeof response.winChance === "number") {
               console.log(response);
             }
@@ -16151,9 +16161,9 @@ var SidePanel = () => {
     const messageListener = (message) => {
       if (message.type === "URL_STATUS") {
         if (message.isTargetSite) {
-          setStatus({ connected: true, message: "✅ Connected to bet88.ph" });
+          setStatus({ connected: true, message: "Connected to bet88.ph" });
         } else {
-          setStatus({ connected: false, message: "❌ Not on bet88.ph" });
+          setStatus({ connected: false, message: "Not on bet88.ph" });
         }
       } else if (message.type === "WIN_CHANCE_UPDATE") {
         if (typeof message.winChance === "number") {}
@@ -16163,8 +16173,12 @@ var SidePanel = () => {
     chrome.runtime.sendMessage({ type: "REQUEST_URL_STATUS" });
     const interval = setInterval(() => {
       loadStats();
-      getWinChanceFromDOM();
-    }, 3000);
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]?.url?.startsWith("https://bet88.ph/")) {
+          getWinChanceFromDOM();
+        }
+      });
+    }, 5000);
     return () => {
       clearInterval(interval);
       chrome.storage.onChanged.removeListener(storageListener);
@@ -16185,7 +16199,7 @@ var SidePanel = () => {
     }
   };
   const latest = import_react3.useMemo(() => stats?.results[stats.results.length - 1], [stats?.results]);
-  const winChance = import_react3.useMemo(() => latest?.winningChance ?? 50, [latest]);
+  const winningChance = import_react3.useMemo(() => latest?.winningChance ?? 0, [latest]);
   return /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("div", {
     className: "bg-[#14141b] text-slate-100 min-w-lg min-h-screen p-4 font-sans",
     children: [
@@ -16207,13 +16221,20 @@ var SidePanel = () => {
                 className: "w-full",
                 children: [
                   /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("h1", {
-                    className: "text-xl font-medium tracking-tight text-white",
+                    className: "text-xl font-medium tracking-tight text-gray-200",
                     children: "Watchful Window"
                   }, undefined, false, undefined, this),
                   /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("p", {
-                    className: `mt-1 font-medium ${status.connected ? "text-green-300" : "text-red-300"}`,
-                    children: status.message
-                  }, undefined, false, undefined, this)
+                    className: `mt-1 flex items-center space-x-1 font-light tracking-tight ${status.connected ? "text-green-300" : "text-red-300"}`,
+                    children: [
+                      /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(ConnectIndicator, {
+                        connected: status.connected
+                      }, undefined, false, undefined, this),
+                      /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("span", {
+                        children: status.message
+                      }, undefined, false, undefined, this)
+                    ]
+                  }, undefined, true, undefined, this)
                 ]
               }, undefined, true, undefined, this),
               /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("div", {
@@ -16288,7 +16309,7 @@ var SidePanel = () => {
               }, undefined, true, undefined, this),
               /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(StatCard, {
                 label: "chance %",
-                value: winChance.toFixed(2),
+                value: winningChance,
                 className: "text-teal-50"
               }, undefined, false, undefined, this),
               /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(StatCard, {
@@ -16305,7 +16326,7 @@ var SidePanel = () => {
                 results: stats.results.slice(-e.count),
                 windows: e.count,
                 accWin: stats.winRate,
-                winChance: +winChance.toFixed(2)
+                winChance: winningChance
               }, e.count, false, undefined, this))
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this),
@@ -16361,6 +16382,29 @@ var SidePanel = () => {
       }, undefined, true, undefined, this)
     ]
   }, undefined, true, undefined, this);
+};
+var ConnectIndicator = ({ connected }) => {
+  return connected ? /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("svg", {
+    xmlns: "http://www.w3.org/2000/svg",
+    width: "32",
+    height: "32",
+    viewBox: "0 0 24 24",
+    className: "size-4",
+    children: /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("path", {
+      className: "fill-win",
+      d: "M4 6h7v2H4v8h7v2H2V6zm16 0h-7v2h7v8h-7v2h9V6zm-3 5H7v2h10z"
+    }, undefined, false, undefined, this)
+  }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("svg", {
+    xmlns: "http://www.w3.org/2000/svg",
+    width: "32",
+    height: "32",
+    viewBox: "0 0 24 24",
+    className: "size-4",
+    children: /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("path", {
+      d: "M13 4h-2v16h2zM4 6h5v2H4v8h5v2H2V6zm11 0h7v12h-7v-2h5V8h-5z",
+      className: "fill-red-300"
+    }, undefined, false, undefined, this)
+  }, undefined, false, undefined, this);
 };
 var sidepanel_default = SidePanel;
 

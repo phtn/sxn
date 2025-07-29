@@ -374,6 +374,8 @@
     --default-mono-font-feature-settings: initial;
     --default-mono-font-variation-settings: initial;
     --color-card: var(--origin);
+    --color-win: oklch(.762 .191 147.38);
+    --color-loss: oklch(.424 .027 256.81);
   }
 }
 
@@ -692,6 +694,11 @@
     height: calc(var(--spacing) * 3);
   }
 
+  .size-4 {
+    width: calc(var(--spacing) * 4);
+    height: calc(var(--spacing) * 4);
+  }
+
   .size-5 {
     width: calc(var(--spacing) * 5);
     height: calc(var(--spacing) * 5);
@@ -803,6 +810,12 @@
     gap: calc(var(--spacing) * 4);
   }
 
+  :where(.space-y-0\.5 > :not(:last-child)) {
+    --tw-space-y-reverse: 0;
+    margin-block-start: calc(calc(var(--spacing) * .5) * var(--tw-space-y-reverse));
+    margin-block-end: calc(calc(var(--spacing) * .5) * calc(1 - var(--tw-space-y-reverse)));
+  }
+
   :where(.space-y-1 > :not(:last-child)) {
     --tw-space-y-reverse: 0;
     margin-block-start: calc(calc(var(--spacing) * 1) * var(--tw-space-y-reverse));
@@ -884,8 +897,12 @@
     border-color: color-mix(in oklab, var(--color-gray-400) 30%, transparent);
   }
 
-  .border-gray-700 {
-    border-color: var(--color-gray-700);
+  .border-loss {
+    border-color: oklch(.424 .027 256.81);
+  }
+
+  .border-win {
+    border-color: oklch(.762 .191 147.38);
   }
 
   .bg-\[\#14141b\] {
@@ -904,16 +921,12 @@
     background-color: color-mix(in oklab, var(--color-gray-400) 10%, transparent);
   }
 
-  .bg-gray-700 {
-    background-color: var(--color-gray-700);
-  }
-
   .bg-green-50\/10 {
     background-color: color-mix(in oklab, var(--color-green-50) 10%, transparent);
   }
 
-  .bg-green-300 {
-    background-color: var(--color-green-300);
+  .bg-loss {
+    background-color: oklch(.424 .027 256.81);
   }
 
   .bg-orange-300 {
@@ -938,6 +951,18 @@
 
   .bg-teal-600 {
     background-color: var(--color-teal-600);
+  }
+
+  .bg-win {
+    background-color: oklch(.762 .191 147.38);
+  }
+
+  .fill-red-300 {
+    fill: var(--color-red-300);
+  }
+
+  .fill-win {
+    fill: oklch(.762 .191 147.38);
   }
 
   .p-0 {

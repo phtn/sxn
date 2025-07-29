@@ -15,6 +15,7 @@ const SidePanel = () => {
     connected: false,
     message: "Connecting...",
   });
+  
   useEffect(() => {
     // Function to load stats from storage
     const loadStats = () => {
@@ -33,12 +34,17 @@ const SidePanel = () => {
     // Function to get winChance from DOM
     const getWinChanceFromDOM = () => {
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        console.log(tabs[0]?.id);
-        if (tabs[0]?.id) {
+        const activeTab = tabs[0];
+        if (activeTab?.id && activeTab.url?.startsWith("https://bet88.ph/")) {
           chrome.tabs.sendMessage(
-            tabs[0].id,
+            activeTab.id,
             { type: "GET_WIN_CHANCE" },
             (response) => {
+              // Check for runtime errors
+              if (chrome.runtime.lastError) {
+                // Silently ignore connection errors - content script may not be ready
+                return;
+              }
               if (response && typeof response.winChance === "number") {
                 console.log(response);
               }
@@ -67,12 +73,13 @@ const SidePanel = () => {
     const messageListener = (message: any) => {
       if (message.type === "URL_STATUS") {
         if (message.isTargetSite) {
-          setStatus({ connected: true, message: "✅ Connected to bet88.ph" });
+          setStatus({ connected: true, message: "Connected to bet88.ph" });
         } else {
-          setStatus({ connected: false, message: "❌ Not on bet88.ph" });
+          setStatus({ connected: false, message: "Not on bet88.ph" });
         }
       } else if (message.type === "WIN_CHANCE_UPDATE") {
         if (typeof message.winChance === "number") {
+          // Handle win chance update if needed
         }
       }
     };
@@ -81,11 +88,16 @@ const SidePanel = () => {
     // Request status on load
     chrome.runtime.sendMessage({ type: "REQUEST_URL_STATUS" });
 
-    // Auto-refresh every 3 seconds
+    // Auto-refresh every 5 seconds
     const interval = setInterval(() => {
       loadStats();
-      getWinChanceFromDOM();
-    }, 3000);
+      // Only try to get win chance from DOM if we're on the target site
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]?.url?.startsWith("https://bet88.ph/")) {
+          getWinChanceFromDOM();
+        }
+      });
+    }, 5000);
 
     // Cleanup
     return () => {
@@ -114,7 +126,7 @@ const SidePanel = () => {
     [stats?.results],
   );
 
-  const winChance = useMemo(() => latest?.winningChance ?? 50, [latest]); // Default value
+  const winningChance = useMemo(() => latest?.winningChance ?? 0, [latest]); // Default value
 
   return (
     <div className="bg-[#14141b] text-slate-100 min-w-lg min-h-screen p-4 font-sans">
@@ -128,13 +140,15 @@ const SidePanel = () => {
         </div>
         <div className="flex w-full items-center justify-between">
           <div className="w-full">
-            <h1 className="text-xl font-medium tracking-tight text-white">
+            <h1 className="text-xl font-medium tracking-tight text-gray-200">
               Watchful Window
             </h1>
             <p
-              className={`mt-1 font-medium ${status.connected ? "text-green-300" : "text-red-300"}`}
+              className={`mt-1 flex items-center space-x-1 font-light tracking-tight ${status.connected ? "text-green-300" : "text-red-300"}`}
             >
-              {status.message}
+              <ConnectIndicator connected={status.connected} />
+
+              <span>{status.message}</span>
             </p>
           </div>
           <div className="flex space-x-16 font-sans">
@@ -181,7 +195,7 @@ const SidePanel = () => {
             </HyperCard>
             <StatCard
               label="chance %"
-              value={winChance.toFixed(2)}
+              value={winningChance}
               className="text-teal-50"
             />
             <StatCard
@@ -198,7 +212,7 @@ const SidePanel = () => {
                   results={stats.results.slice(-e.count)}
                   windows={e.count}
                   accWin={stats.winRate}
-                  winChance={+winChance.toFixed(2)}
+                  winChance={winningChance}
                 />
               ))}
             </HyperCard>
@@ -253,6 +267,39 @@ const SidePanel = () => {
         </>
       )}
     </div>
+  );
+};
+
+interface ConnectProps {
+  connected: boolean;
+}
+const ConnectIndicator = ({ connected }: ConnectProps) => {
+  return connected ? (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="32"
+      height="32"
+      viewBox="0 0 24 24"
+      className="size-4"
+    >
+      <path
+        className="fill-win"
+        d="M4 6h7v2H4v8h7v2H2V6zm16 0h-7v2h7v8h-7v2h9V6zm-3 5H7v2h10z"
+      />
+    </svg>
+  ) : (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="32"
+      height="32"
+      viewBox="0 0 24 24"
+      className="size-4"
+    >
+      <path
+        d="M13 4h-2v16h2zM4 6h5v2H4v8h5v2H2V6zm11 0h7v12h-7v-2h5V8h-5z"
+        className="fill-red-300"
+      />
+    </svg>
   );
 };
 

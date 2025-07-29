@@ -12,7 +12,8 @@ export interface ResponseGameData {
     | KenoCustom
     | ColorWheelCustom
     | CoinFlipCustom
-    | LimboCustom;
+    | LimboCustom
+    | DiceCustom;
 }
 export interface GameResult {
   timestamp: number;

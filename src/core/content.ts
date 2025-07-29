@@ -2,22 +2,6 @@
 
 import { GameResult, MinesCustom, ResponseGameData, StoredData } from "@/types";
 
-// interface GameResult {
-//   timestamp: number;
-//   result: "win" | "loss";
-//   amount?: number;
-//   gameType?: string;
-//   url: string;
-// }
-
-// interface StoredData {
-//   results: GameResult[];
-//   totalGames: number;
-//   wins: number;
-//   losses: number;
-//   winRate: number;
-// }
-
 // Flag to track if the extension context is valid
 let isExtensionContextValid = true;
 
@@ -141,7 +125,7 @@ async function handleMessage(event: MessageEvent) {
 
       // Validate that we have the expected data structure
       if (!data || typeof data !== "object") {
-        console.warn("CONTENT: Invalid data structure in message:", data);
+        console.log("WARN|CONTENT: Invalid data structure in message:", data);
         return;
       }
 
@@ -164,7 +148,7 @@ async function processGameResult({ data }: { data: ResponseGameData }) {
       await saveGameResult(result);
       console.log("Casino game result saved:", result);
     } else {
-      console.warn("Could not parse game result from response data:");
+      console.log("WARN|Could not parse game result from response data:");
       console.log("Response data structure:", JSON.stringify(data, null, 2));
 
       // Additional debugging - check what's in the nested data
@@ -177,8 +161,8 @@ async function processGameResult({ data }: { data: ResponseGameData }) {
     }
   } catch (error) {
     if (error instanceof Error && error.message.includes("Extension context")) {
-      console.warn(
-        "Extension context invalidated. Could not save game result.",
+      console.log(
+        "WARN|Extension context invalidated. Could not save game result.",
       );
       // Optionally, perform cleanup or stop further processing
     } else {
@@ -268,19 +252,12 @@ function parseGameResult(data: ResponseGameData): GameResult | null {
         gameType = "coinflip";
         console.log("PARSE: Detected Coin Flip game from custom fields");
       } else if (
-        "result" in custom &&
-        typeof custom.result === "number" &&
-        "winningChance" in custom &&
-        typeof custom.winningChance === "number"
+        "option" in custom &&
+        "targetNumber" in custom &&
+        typeof custom.targetNumber === "number"
       ) {
         // Check if it's dice (result should be between 1-100 for dice roll)
-        if (custom.result >= 1 && custom.result <= 100) {
-          gameType = "dice";
-          console.log("PARSE: Detected Dice game from custom fields");
-        } else {
-          gameType = "limbo";
-          console.log("PARSE: Detected Limbo game from custom fields");
-        }
+        gameType = "dice";
       } else if (
         "multiplier" in custom &&
         typeof custom.multiplier === "number" &&
@@ -293,8 +270,9 @@ function parseGameResult(data: ResponseGameData): GameResult | null {
         console.log("PARSE: Used URL-based game type detection:", gameType);
       }
 
-      const multiplier = "multiplier" in custom && custom.multiplier;
-      const winningChance = "winningChance" in custom && custom.winningChance;
+      const multiplier = "multiplier" in custom ? custom.multiplier : 0;
+      const winningChance =
+        "winningChance" in custom ? custom.winningChance : undefined;
 
       console.table({
         result,
@@ -305,15 +283,18 @@ function parseGameResult(data: ResponseGameData): GameResult | null {
         winningChance,
       });
 
-      const parsedResult = {
+      let parsedResult: GameResult = {
         timestamp: Date.now(),
         result,
         amount,
         multiplier,
-        winningChance,
         gameType,
         url: window.location.href,
-      } as GameResult;
+      };
+
+      if (winningChance !== undefined) {
+        parsedResult.winningChance = winningChance;
+      }
 
       console.log("PARSE: Successfully parsed result:", parsedResult);
       return parsedResult;
