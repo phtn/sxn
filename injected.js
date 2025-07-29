@@ -27,7 +27,7 @@
     return gameKeywords.some((keyword) => lowerUrl.includes(keyword));
   }
   function sendToContentScript(data) {
-    console.log("INJECTED: Sending data to content script", data);
+    console.log("[INJECT] Sending Data to Content");
     window.postMessage({
       type: "CASINO_RESPONSE",
       data
@@ -101,5 +101,6 @@
     }
     return originalXHRSend.call(this, body);
   };
-  console.log("Casino game interceptor injected successfully");
+  console.clear();
+  console.log("Interceptor Injected");
 })();

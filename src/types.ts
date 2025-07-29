@@ -8,7 +8,7 @@ export interface ResponseGameData {
   active: boolean;
   custom:
     | MinesCustom
-    | Plinko
+    | PlinkoCustom
     | KenoCustom
     | ColorWheelCustom
     | CoinFlipCustom
@@ -18,6 +18,7 @@ export interface ResponseGameData {
 export interface GameResult {
   timestamp: number;
   result: "win" | "loss";
+  roundId?: number;
   amount?: number;
   gameType?: string;
   multiplier?: number;
@@ -41,7 +42,7 @@ export interface CasinoResult {
 }
 
 export type MinesCustom = { mines: number[]; mineCount: number };
-export type Plinko = {
+export type PlinkoCustom = {
   multislots: number[];
   multipath: number[];
   multiplierList: number[];
@@ -66,6 +67,6 @@ export type LimboCustom = {
 };
 
 export type DiceCustom = {
-  result: number;
-  winningChance: number;
+  option: "OVER" | "UNDER";
+  targetNumber: number;
 };

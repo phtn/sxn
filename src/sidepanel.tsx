@@ -15,7 +15,7 @@ const SidePanel = () => {
     connected: false,
     message: "Connecting...",
   });
-  
+
   useEffect(() => {
     // Function to load stats from storage
     const loadStats = () => {
@@ -154,7 +154,7 @@ const SidePanel = () => {
           <div className="flex space-x-16 font-sans">
             <div className="space-y-1 text-right">
               <p className="text-xs text-gray-400 tracking-wide font-light uppercase ">
-                Dice
+                {latest?.gameType ?? "game"}
               </p>
               <p
                 className={`text-xl font-semibold uppercase  ${latest && latest.result === "win" ? "text-green-300" : "text-red-300"}`}

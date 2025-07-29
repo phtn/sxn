@@ -1,7 +1,86 @@
 // content.js - Inject the interceptor and handle communication
 
-import { GameResult, MinesCustom, ResponseGameData, StoredData } from "@/types";
+import {
+  DiceCustom,
+  GameResult,
+  MinesCustom,
+  LimboCustom,
+  KenoCustom,
+  PlinkoCustom,
+  ColorWheelCustom,
+  CoinFlipCustom,
+  ResponseGameData,
+  StoredData,
+} from "@/types";
 
+function isLimboCustom(obj: any): obj is LimboCustom {
+  return (
+    typeof obj === "object" &&
+    typeof obj.multiplier === "number" &&
+    typeof obj.winningChance === "number"
+  );
+}
+
+function isDiceCustom(obj: any): obj is DiceCustom {
+  return (
+    typeof obj === "object" &&
+    (obj.option === "OVER" || obj.option === "UNDER") &&
+    typeof obj.targetNumber === "number"
+  );
+}
+
+function isMinesCustom(obj: any): obj is MinesCustom {
+  return (
+    typeof obj === "object" &&
+    Array.isArray(obj.mines) &&
+    obj.mines.every((n: any) => typeof n === "number") &&
+    typeof obj.mineCount === "number"
+  );
+}
+
+function isPlinkoCustom(obj: any): obj is PlinkoCustom {
+  return (
+    typeof obj === "object" &&
+    Array.isArray(obj.multislots) &&
+    obj.multislots.every((n: any) => typeof n === "number") &&
+    Array.isArray(obj.multipath) &&
+    obj.multipath.every((n: any) => typeof n === "number") &&
+    Array.isArray(obj.multiplierList) &&
+    obj.multiplierList.every((n: any) => typeof n === "number")
+  );
+}
+
+function isKenoCustom(obj: any): obj is KenoCustom {
+  return (
+    typeof obj === "object" &&
+    Array.isArray(obj.drawNumbers) &&
+    obj.drawNumbers.every((n: any) => typeof n === "number") &&
+    typeof obj.numberOfMatches === "number"
+  );
+}
+
+function isColorWheelCustom(obj: any): obj is ColorWheelCustom {
+  return (
+    typeof obj === "object" &&
+    typeof obj.multiplier === "number" &&
+    typeof obj.slot === "number"
+  );
+}
+
+function isCoinFlipCustom(obj: any): obj is CoinFlipCustom {
+  return (
+    typeof obj === "object" &&
+    Array.isArray(obj.rounds) &&
+    obj.rounds.every(
+      (round: any) =>
+        typeof round === "object" &&
+        (round.targetFace === undefined ||
+          round.targetFace === "HEADS" ||
+          round.targetFace === "TAILS") &&
+        (round.result === "HEADS" || round.result === "TAILS"),
+    )
+  );
+}
 // Flag to track if the extension context is valid
 let isExtensionContextValid = true;
 
@@ -28,7 +107,6 @@ function injectScript() {
       script.remove();
     };
     (document.head || document.documentElement).appendChild(script);
-    console.log("CONTENT: Injected script successfully");
   } catch (error) {
     console.error("CONTENT: Failed to inject script:", error);
   }
@@ -43,7 +121,6 @@ function initialize() {
   injectScript();
 
   // Listen for messages from the injected script
-  console.log("CONTENT: Setting up message listener");
   window.addEventListener("message", handleMessage);
 
   // Listen for messages from the extension (sidepanel)
@@ -91,8 +168,6 @@ function initialize() {
       // Listen for changes
       winChanceElement.addEventListener("input", sendWinChanceUpdate);
       winChanceElement.addEventListener("change", sendWinChanceUpdate);
-
-      console.log("CONTENT: Monitoring winChance input element");
     } else {
       // Retry after a delay if element not found
       setTimeout(monitorWinChanceInput, 2000);
@@ -110,7 +185,8 @@ async function handleMessage(event: MessageEvent) {
 
   // Only process CASINO_RESPONSE messages
   if (event.data.type === "CASINO_RESPONSE") {
-    console.log("CONTENT: Received message from injected script", event.data);
+    console.clear();
+    console.log("[CONTENT] -| Bet Response Received");
 
     // Only process if the extension context is still valid
     if (!checkExtensionContext()) {
@@ -138,25 +214,14 @@ async function handleMessage(event: MessageEvent) {
 
 async function processGameResult({ data }: { data: ResponseGameData }) {
   try {
-    console.log(
-      "CONTENT: Processing response data:",
-      JSON.stringify(data, null, 2),
-    );
-
     const result = parseGameResult(data);
     if (result) {
       await saveGameResult(result);
-      console.log("Casino game result saved:", result);
+      console.log("[CONTENT] Game Result Saved");
     } else {
-      console.log("WARN|Could not parse game result from response data:");
-      console.log("Response data structure:", JSON.stringify(data, null, 2));
-
-      // Additional debugging - check what's in the nested data
+      console.log("[CONTENT] Couldn't Parse Game Result");
       if (data) {
-        console.log("Nested data structure:", JSON.stringify(data, null, 2));
-        console.log("Has roundId:", !!data.roundId);
-        console.log("Has win property:", typeof data.win);
-        console.log("Win value:", data.profit);
+        console.log("[CONTENT] With Data");
       }
     }
   } catch (error) {
@@ -173,7 +238,7 @@ async function processGameResult({ data }: { data: ResponseGameData }) {
 
 function parseGameResult(data: ResponseGameData): GameResult | null {
   try {
-    console.log("PARSE: Starting to parse response data");
+    console.log("[CONTENT] Parsing Data");
 
     // Check if we have the expected nested structure
     let gameData = data as ResponseGameData;
@@ -183,21 +248,9 @@ function parseGameResult(data: ResponseGameData): GameResult | null {
       console.log("PARSE: No nested data found, checking top level");
     }
 
-    console.log(
-      "PARSE: Game data to analyze:",
-      JSON.stringify(gameData, null, 2),
-    );
-
     // More flexible parsing - check for various indicators of a game result
     const hasRoundId = gameData && gameData.roundId;
     const hasWinIndicator = gameData && typeof gameData.win === "boolean";
-
-    console.log(
-      "PARSE: Has round ID:",
-      !!hasRoundId,
-      "Has win indicator:",
-      !!hasWinIndicator,
-    );
 
     if (gameData && hasRoundId && hasWinIndicator) {
       // Determine win/loss from various possible fields
@@ -219,72 +272,31 @@ function parseGameResult(data: ResponseGameData): GameResult | null {
       // Determine game type from custom fields first, then fallback to URL
       let gameType = "unknown";
 
-      // Check for game-specific custom fields to determine game type
-      if (
-        "mines" in custom &&
-        custom.mines &&
-        Array.isArray(custom.mines) &&
-        typeof custom.mineCount === "number"
-      ) {
+      if (isMinesCustom(custom)) {
         gameType = "mines";
-        console.log("PARSE: Detected Mines game from custom fields");
-      } else if ("multislots" in custom && Array.isArray(custom.multislots)) {
+      } else if (isPlinkoCustom(custom)) {
         gameType = "plinko";
-        console.log("PARSE: Detected Plinko game from custom fields");
-      } else if ("drawNumbers" in custom && Array.isArray(custom.drawNumbers)) {
+      } else if (isKenoCustom(custom)) {
         gameType = "keno";
-        console.log("PARSE: Detected Keno game from custom fields");
-      } else if (
-        "slot" in custom &&
-        typeof custom.slot === "number" &&
-        "multiplier" in custom &&
-        typeof custom.multiplier === "number"
-      ) {
+      } else if (isColorWheelCustom(custom)) {
         gameType = "colorwheel";
-        console.log("PARSE: Detected Color Wheel game from custom fields");
-      } else if (
-        "rounds" in custom &&
-        Array.isArray(custom.rounds) &&
-        custom.rounds.length > 0 &&
-        custom.rounds[0].result &&
-        ["HEADS", "TAILS"].includes(custom.rounds[0].result)
-      ) {
+      } else if (isCoinFlipCustom(custom)) {
         gameType = "coinflip";
-        console.log("PARSE: Detected Coin Flip game from custom fields");
-      } else if (
-        "option" in custom &&
-        "targetNumber" in custom &&
-        typeof custom.targetNumber === "number"
-      ) {
-        // Check if it's dice (result should be between 1-100 for dice roll)
+      } else if (isDiceCustom(custom)) {
         gameType = "dice";
-      } else if (
-        "multiplier" in custom &&
-        typeof custom.multiplier === "number" &&
-        "winningChance" in custom &&
-        typeof custom.winningChance === "number"
-      ) {
+      } else if (isLimboCustom(custom)) {
         gameType = "limbo";
-        console.log("PARSE: Detected Limbo game from custom fields");
       } else {
-        console.log("PARSE: Used URL-based game type detection:", gameType);
+        gameType = "dice";
       }
 
       const multiplier = "multiplier" in custom ? custom.multiplier : 0;
       const winningChance =
         "winningChance" in custom ? custom.winningChance : undefined;
 
-      console.table({
-        result,
-        amount,
-        gameType,
-        roundId,
-        multiplier,
-        winningChance,
-      });
-
       let parsedResult: GameResult = {
         timestamp: Date.now(),
+        roundId,
         result,
         amount,
         multiplier,
@@ -296,7 +308,6 @@ function parseGameResult(data: ResponseGameData): GameResult | null {
         parsedResult.winningChance = winningChance;
       }
 
-      console.log("PARSE: Successfully parsed result:", parsedResult);
       return parsedResult;
     } else {
       console.log("PARSE: Missing required fields - roundId or win indicator");

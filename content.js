@@ -1,4 +1,25 @@
 // src/core/content.ts
+function isLimboCustom(obj) {
+  return typeof obj === "object" && typeof obj.multiplier === "number" && typeof obj.winningChance === "number";
+}
+function isDiceCustom(obj) {
+  return typeof obj === "object" && (obj.option === "OVER" || obj.option === "UNDER") && typeof obj.targetNumber === "number";
+}
+function isMinesCustom(obj) {
+  return typeof obj === "object" && Array.isArray(obj.mines) && obj.mines.every((n) => typeof n === "number") && typeof obj.mineCount === "number";
+}
+function isPlinkoCustom(obj) {
+  return typeof obj === "object" && Array.isArray(obj.multislots) && obj.multislots.every((n) => typeof n === "number") && Array.isArray(obj.multipath) && obj.multipath.every((n) => typeof n === "number") && Array.isArray(obj.multiplierList) && obj.multiplierList.every((n) => typeof n === "number");
+}
+function isKenoCustom(obj) {
+  return typeof obj === "object" && Array.isArray(obj.drawNumbers) && obj.drawNumbers.every((n) => typeof n === "number") && typeof obj.numberOfMatches === "number";
+}
+function isColorWheelCustom(obj) {
+  return typeof obj === "object" && typeof obj.multiplier === "number" && typeof obj.slot === "number";
+}
+function isCoinFlipCustom(obj) {
+  return typeof obj === "object" && Array.isArray(obj.rounds) && obj.rounds.every((round) => typeof round === "object" && (round.targetFace === undefined || round.targetFace === "HEADS" || round.targetFace === "TAILS") && (round.result === "HEADS" || round.result === "TAILS"));
+}
 var isExtensionContextValid = true;
 function checkExtensionContext() {
   try {
@@ -19,7 +40,6 @@ function injectScript() {
       script.remove();
     };
     (document.head || document.documentElement).appendChild(script);
-    console.log("CONTENT: Injected script successfully");
   } catch (error) {
     console.error("CONTENT: Failed to inject script:", error);
   }
@@ -28,7 +48,6 @@ function initialize() {
   if (!checkExtensionContext())
     return;
   injectScript();
-  console.log("CONTENT: Setting up message listener");
   window.addEventListener("message", handleMessage);
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "GET_WIN_CHANCE") {
@@ -61,7 +80,6 @@ function initialize() {
       sendWinChanceUpdate();
       winChanceElement.addEventListener("input", sendWinChanceUpdate);
       winChanceElement.addEventListener("change", sendWinChanceUpdate);
-      console.log("CONTENT: Monitoring winChance input element");
     } else {
       setTimeout(monitorWinChanceInput, 2000);
     }
@@ -72,7 +90,8 @@ async function handleMessage(event) {
   if (event.source !== window || !event.data || !event.data.type)
     return;
   if (event.data.type === "CASINO_RESPONSE") {
-    console.log("CONTENT: Received message from injected script", event.data);
+    console.clear();
+    console.log("[CONTENT] -| Bet Response Received");
     if (!checkExtensionContext()) {
       console.warn("CONTENT: Cannot process message, extension context is invalid");
       return;
@@ -91,19 +110,14 @@ async function handleMessage(event) {
 }
 async function processGameResult({ data }) {
   try {
-    console.log("CONTENT: Processing response data:", JSON.stringify(data, null, 2));
     const result = parseGameResult(data);
     if (result) {
       await saveGameResult(result);
-      console.log("Casino game result saved:", result);
+      console.log("[CONTENT] Game Result Saved");
     } else {
-      console.log("WARN|Could not parse game result from response data:");
-      console.log("Response data structure:", JSON.stringify(data, null, 2));
+      console.log("[CONTENT] Couldn't Parse Game Result");
       if (data) {
-        console.log("Nested data structure:", JSON.stringify(data, null, 2));
-        console.log("Has roundId:", !!data.roundId);
-        console.log("Has win property:", typeof data.win);
-        console.log("Win value:", data.profit);
+        console.log("[CONTENT] With Data");
       }
     }
   } catch (error) {
@@ -116,15 +130,13 @@ async function processGameResult({ data }) {
 }
 function parseGameResult(data) {
   try {
-    console.log("PARSE: Starting to parse response data");
+    console.log("[CONTENT] Parsing Data");
     let gameData = data;
     if (!gameData) {
       console.log("PARSE: No nested data found, checking top level");
     }
-    console.log("PARSE: Game data to analyze:", JSON.stringify(gameData, null, 2));
     const hasRoundId = gameData && gameData.roundId;
     const hasWinIndicator = gameData && typeof gameData.win === "boolean";
-    console.log("PARSE: Has round ID:", !!hasRoundId, "Has win indicator:", !!hasWinIndicator);
     if (gameData && hasRoundId && hasWinIndicator) {
       let result;
       if (typeof gameData.win === "boolean") {
@@ -138,41 +150,28 @@ function parseGameResult(data) {
       roundId = gameData.roundId;
       amount = +gameData.profit;
       let gameType = "unknown";
-      if ("mines" in custom && custom.mines && Array.isArray(custom.mines) && typeof custom.mineCount === "number") {
+      if (isMinesCustom(custom)) {
         gameType = "mines";
-        console.log("PARSE: Detected Mines game from custom fields");
-      } else if ("multislots" in custom && Array.isArray(custom.multislots)) {
+      } else if (isPlinkoCustom(custom)) {
         gameType = "plinko";
-        console.log("PARSE: Detected Plinko game from custom fields");
-      } else if ("drawNumbers" in custom && Array.isArray(custom.drawNumbers)) {
+      } else if (isKenoCustom(custom)) {
         gameType = "keno";
-        console.log("PARSE: Detected Keno game from custom fields");
-      } else if ("slot" in custom && typeof custom.slot === "number" && "multiplier" in custom && typeof custom.multiplier === "number") {
+      } else if (isColorWheelCustom(custom)) {
         gameType = "colorwheel";
-        console.log("PARSE: Detected Color Wheel game from custom fields");
-      } else if ("rounds" in custom && Array.isArray(custom.rounds) && custom.rounds.length > 0 && custom.rounds[0].result && ["HEADS", "TAILS"].includes(custom.rounds[0].result)) {
+      } else if (isCoinFlipCustom(custom)) {
         gameType = "coinflip";
-        console.log("PARSE: Detected Coin Flip game from custom fields");
-      } else if ("option" in custom && "targetNumber" in custom && typeof custom.targetNumber === "number") {
+      } else if (isDiceCustom(custom)) {
         gameType = "dice";
-      } else if ("multiplier" in custom && typeof custom.multiplier === "number" && "winningChance" in custom && typeof custom.winningChance === "number") {
+      } else if (isLimboCustom(custom)) {
         gameType = "limbo";
-        console.log("PARSE: Detected Limbo game from custom fields");
       } else {
-        console.log("PARSE: Used URL-based game type detection:", gameType);
+        gameType = "dice";
       }
       const multiplier = "multiplier" in custom ? custom.multiplier : 0;
       const winningChance = "winningChance" in custom ? custom.winningChance : undefined;
-      console.table({
-        result,
-        amount,
-        gameType,
-        roundId,
-        multiplier,
-        winningChance
-      });
       let parsedResult = {
         timestamp: Date.now(),
+        roundId,
         result,
         amount,
         multiplier,
@@ -182,7 +181,6 @@ function parseGameResult(data) {
       if (winningChance !== undefined) {
         parsedResult.winningChance = winningChance;
       }
-      console.log("PARSE: Successfully parsed result:", parsedResult);
       return parsedResult;
     } else {
       console.log("PARSE: Missing required fields - roundId or win indicator");

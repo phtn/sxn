@@ -16245,7 +16245,7 @@ var SidePanel = () => {
                     children: [
                       /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("p", {
                         className: "text-xs text-gray-400 tracking-wide font-light uppercase ",
-                        children: "Dice"
+                        children: latest?.gameType ?? "game"
                       }, undefined, false, undefined, this),
                       /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("p", {
                         className: `text-xl font-semibold uppercase  ${latest && latest.result === "win" ? "text-green-300" : "text-red-300"}`,
